@@ -28,6 +28,7 @@ export function initGlobalAPI (Vue: GlobalAPI) {
       )
     }
   }
+  // 静态配置信息
   Object.defineProperty(Vue, 'config', configDef)
 
   // exposed util methods.

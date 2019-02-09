@@ -26,8 +26,10 @@ const weexFactoryPlugin = {
 
 const aliases = require('./alias')
 const resolve = p => {
+  // 解析路径
   const base = p.split('/')[0]
   if (aliases[base]) {
+    // 通过别名解析
     return path.resolve(aliases[base], p.slice(base.length + 1))
   } else {
     return path.resolve(__dirname, '../', p)
@@ -35,6 +37,12 @@ const resolve = p => {
 }
 
 const builds = {
+  // format代表构建的格式
+  // cjs代表CommonJS，es代表ES Module，umd代表UMD规范
+
+  // Runtime only版本借助如 webpack 的 vue-loader 工具把 .vue 文件编译成 JavaScript
+  // Compiler包含了模板编译器
+
   // Runtime only (CommonJS). Used by bundlers e.g. Webpack & Browserify
   'web-runtime-cjs': {
     entry: resolve('web/entry-runtime.js'),

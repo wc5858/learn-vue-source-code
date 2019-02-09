@@ -9,11 +9,12 @@ if (!fs.existsSync('dist')) {
 }
 
 let builds = require('./config').getAllBuilds()
-
+console.log(builds)
 // filter builds via command line arg
 if (process.argv[2]) {
   const filters = process.argv[2].split(',')
   builds = builds.filter(b => {
+    // 遍历builds，找所有匹配（按路径匹配或按名称匹配）
     return filters.some(f => b.output.file.indexOf(f) > -1 || b._name.indexOf(f) > -1)
   })
 } else {
@@ -29,6 +30,7 @@ function build (builds) {
   let built = 0
   const total = builds.length
   const next = () => {
+    // 构建每个build，在回调中递归
     buildEntry(builds[built]).then(() => {
       built++
       if (built < total) {

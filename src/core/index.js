@@ -3,8 +3,10 @@ import { initGlobalAPI } from './global-api/index'
 import { isServerRendering } from 'core/util/env'
 import { FunctionalRenderContext } from 'core/vdom/create-functional-component'
 
+// 全局静态方法
 initGlobalAPI(Vue)
 
+// Object.defineProperty默认不可枚举、不可写
 Object.defineProperty(Vue.prototype, '$isServer', {
   get: isServerRendering
 })

@@ -6,6 +6,7 @@ import { lifecycleMixin } from './lifecycle'
 import { warn } from '../util/index'
 
 function Vue (options) {
+  // 这里是一个安全工厂
   if (process.env.NODE_ENV !== 'production' &&
     !(this instanceof Vue)
   ) {
@@ -14,6 +15,7 @@ function Vue (options) {
   this._init(options)
 }
 
+// 用增强的方式实现继承，方便模块化，适用于复杂对象
 initMixin(Vue)
 stateMixin(Vue)
 eventsMixin(Vue)

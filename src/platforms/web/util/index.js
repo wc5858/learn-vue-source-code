@@ -16,6 +16,7 @@ export function query (el: string | Element): Element {
       process.env.NODE_ENV !== 'production' && warn(
         'Cannot find element: ' + el
       )
+      // 注意找不到的时候会创建一个
       return document.createElement('div')
     }
     return selected

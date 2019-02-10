@@ -19,6 +19,7 @@ export function initMixin (Vue: Class<Component>) {
     vm._uid = uid++
 
     let startTag, endTag
+    // Istanbul是一个代码覆盖率工具
     /* istanbul ignore if */
     if (process.env.NODE_ENV !== 'production' && config.performance && mark) {
       startTag = `vue-perf-start:${vm._uid}`
@@ -26,6 +27,7 @@ export function initMixin (Vue: Class<Component>) {
       mark(startTag)
     }
 
+    // 合并配置
     // a flag to avoid this being observed
     vm._isVue = true
     // merge options
@@ -47,6 +49,7 @@ export function initMixin (Vue: Class<Component>) {
     } else {
       vm._renderProxy = vm
     }
+    // 各种初始化
     // expose real self
     vm._self = vm
     initLifecycle(vm)
@@ -64,7 +67,7 @@ export function initMixin (Vue: Class<Component>) {
       mark(endTag)
       measure(`vue ${vm._name} init`, startTag, endTag)
     }
-
+    // 挂载vm，$mount是平台相关的
     if (vm.$options.el) {
       vm.$mount(vm.$options.el)
     }

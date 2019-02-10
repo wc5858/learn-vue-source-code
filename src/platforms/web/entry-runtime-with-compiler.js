@@ -14,13 +14,17 @@ const idToTemplate = cached(id => {
   return el && el.innerHTML
 })
 
+// 缓存原型上的$mount，按平台需要包装功能
+// hydrating是与ssr相关的配置项
 const mount = Vue.prototype.$mount
 Vue.prototype.$mount = function (
   el?: string | Element,
   hydrating?: boolean
 ): Component {
+  // 注意这个简洁的写法，el是非空字符串时，获取el对应的dom
   el = el && query(el)
 
+  // 对节点类型做了限制
   /* istanbul ignore if */
   if (el === document.body || el === document.documentElement) {
     process.env.NODE_ENV !== 'production' && warn(
@@ -54,6 +58,7 @@ Vue.prototype.$mount = function (
         return this
       }
     } else if (el) {
+      // 优先使用template，否则就直接用el
       template = getOuterHTML(el)
     }
     if (template) {
@@ -62,6 +67,7 @@ Vue.prototype.$mount = function (
         mark('compile')
       }
 
+      // 把template转成了render
       const { render, staticRenderFns } = compileToFunctions(template, {
         shouldDecodeNewlines,
         shouldDecodeNewlinesForHref,
@@ -78,6 +84,7 @@ Vue.prototype.$mount = function (
       }
     }
   }
+  // 处理完
   return mount.call(this, el, hydrating)
 }
 

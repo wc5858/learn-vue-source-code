@@ -157,6 +157,7 @@ export function mountComponent (
       }
     }
   }
+  // 生命周期钩子
   callHook(vm, 'beforeMount')
 
   let updateComponent
@@ -180,6 +181,8 @@ export function mountComponent (
     }
   } else {
     updateComponent = () => {
+      // vm._render 方法内部执行 createElement 方法，生成虚拟 Node
+      // vm._update 更新 DOM
       vm._update(vm._render(), hydrating)
     }
   }
@@ -187,6 +190,7 @@ export function mountComponent (
   // we set this to vm._watcher inside the watcher's constructor
   // since the watcher's initial patch may call $forceUpdate (e.g. inside child
   // component's mounted hook), which relies on vm._watcher being already defined
+  // 为updateComponent新建一个Watcher，并添加hook，目的是数据变动时能触发updateComponent
   new Watcher(vm, updateComponent, noop, {
     before () {
       if (vm._isMounted) {
@@ -198,6 +202,7 @@ export function mountComponent (
 
   // manually mounted instance, call mounted on self
   // mounted is called for render-created child components in its inserted hook
+  // vm.$vnode 表示 Vue 实例的父虚拟 Node，所以它为 Null 则表示当前是根 Vue 的实例
   if (vm.$vnode == null) {
     vm._isMounted = true
     callHook(vm, 'mounted')

@@ -7,6 +7,7 @@ import { traverse } from '../observer/traverse'
 
 import {
   warn,
+  // isDef：不为undefined也不为null
   isDef,
   isUndef,
   isTrue,
@@ -25,6 +26,7 @@ const ALWAYS_NORMALIZE = 2
 
 // wrapper function for providing a more flexible interface
 // without getting yelled at by flow
+// 对 _createElement 方法的封装，它允许传入的参数更加灵活
 export function createElement (
   context: Component,
   tag: any,
@@ -34,10 +36,12 @@ export function createElement (
   alwaysNormalize: boolean
 ): VNode | Array<VNode> {
   if (Array.isArray(data) || isPrimitive(data)) {
+    // 允许省略data参数，将其他参数后移，不过没考虑alwaysNormalize，应该是这种情况下默认false
     normalizationType = children
     children = data
     data = undefined
   }
+  // isTrue是全等检查
   if (isTrue(alwaysNormalize)) {
     normalizationType = ALWAYS_NORMALIZE
   }
@@ -52,6 +56,7 @@ export function _createElement (
   normalizationType?: number
 ): VNode | Array<VNode> {
   if (isDef(data) && isDef((data: any).__ob__)) {
+    // 不能用已经被observe的data对象
     process.env.NODE_ENV !== 'production' && warn(
       `Avoid using observed data object as vnode data: ${JSON.stringify(data)}\n` +
       'Always create fresh vnode data objects in each render!',
@@ -61,6 +66,7 @@ export function _createElement (
   }
   // object syntax in v-bind
   if (isDef(data) && isDef(data.is)) {
+    // 如果有v-bind:is，用is指明的tag替换
     tag = data.is
   }
   if (!tag) {
@@ -79,7 +85,9 @@ export function _createElement (
       )
     }
   }
+  // children 表示当前 VNode 的子节点，它是任意类型的，它接下来需要被规范为标准的 VNode 数组
   // support single function children as default scoped slot
+  // 支持单个函数作为scoped slot
   if (Array.isArray(children) &&
     typeof children[0] === 'function'
   ) {

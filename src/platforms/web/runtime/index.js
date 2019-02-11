@@ -31,6 +31,7 @@ extend(Vue.options.directives, platformDirectives)
 extend(Vue.options.components, platformComponents)
 
 // install platform patch function
+// noop是空函数，因为服务端渲染不需要生成dom
 Vue.prototype.__patch__ = inBrowser ? patch : noop
 
 // public mount method

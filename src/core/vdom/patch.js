@@ -142,6 +142,7 @@ export function createPatchFunction (backend) {
 
     vnode.isRootInsert = !nested // for transition enter check
     if (createComponent(vnode, insertedVnodeQueue, parentElm, refElm)) {
+      // 尝试直接创建子组件
       return
     }
 
@@ -153,6 +154,7 @@ export function createPatchFunction (backend) {
         if (data && data.pre) {
           creatingElmInVPre++
         }
+        // 非生产环境对tag会做检查
         if (isUnknownElement(vnode, creatingElmInVPre)) {
           warn(
             'Unknown custom element: <' + tag + '> - did you ' +
@@ -163,6 +165,7 @@ export function createPatchFunction (backend) {
         }
       }
 
+      // 为vnode创建真实元素
       vnode.elm = vnode.ns
         ? nodeOps.createElementNS(vnode.ns, tag)
         : nodeOps.createElement(tag, vnode)
@@ -188,10 +191,13 @@ export function createPatchFunction (backend) {
           insert(parentElm, vnode.elm, refElm)
         }
       } else {
+        // 创建子元素
         createChildren(vnode, children, insertedVnodeQueue)
         if (isDef(data)) {
           invokeCreateHooks(vnode, insertedVnodeQueue)
         }
+        // 将真实元素插入到页面
+        // 因为是递归调用，子元素会优先调用 insert，所以整个 vnode 树节点的插入顺序是先子后父
         insert(parentElm, vnode.elm, refElm)
       }
 
@@ -199,9 +205,11 @@ export function createPatchFunction (backend) {
         creatingElmInVPre--
       }
     } else if (isTrue(vnode.isComment)) {
+      // tag未定义，且vnode是注释节点
       vnode.elm = nodeOps.createComment(vnode.text)
       insert(parentElm, vnode.elm, refElm)
     } else {
+      // tag未定义，且vnode非注释节点，直接创建文本节点
       vnode.elm = nodeOps.createTextNode(vnode.text)
       insert(parentElm, vnode.elm, refElm)
     }
@@ -283,10 +291,12 @@ export function createPatchFunction (backend) {
 
   function createChildren (vnode, children, insertedVnodeQueue) {
     if (Array.isArray(children)) {
+      // children为数组时，递归创建子元素
       if (process.env.NODE_ENV !== 'production') {
         checkDuplicateKeys(children)
       }
       for (let i = 0; i < children.length; ++i) {
+        // 深度优先的递归遍历
         createElm(children[i], insertedVnodeQueue, vnode.elm, null, true, children, i)
       }
     } else if (isPrimitive(vnode.text)) {
@@ -303,10 +313,12 @@ export function createPatchFunction (backend) {
 
   function invokeCreateHooks (vnode, insertedVnodeQueue) {
     for (let i = 0; i < cbs.create.length; ++i) {
+      // 这里面会执行所有的钩子
       cbs.create[i](emptyNode, vnode)
     }
     i = vnode.data.hook // Reuse variable
     if (isDef(i)) {
+      // 执行所有的 create 的钩子并把 vnode push 到 insertedVnodeQueue 中
       if (isDef(i.create)) i.create(emptyNode, vnode)
       if (isDef(i.insert)) insertedVnodeQueue.push(vnode)
     }
@@ -701,6 +713,7 @@ export function createPatchFunction (backend) {
         // patch existing root node
         patchVnode(oldVnode, vnode, insertedVnodeQueue, removeOnly)
       } else {
+        // 对于初次渲染，vm.$el为真实dom
         if (isRealElement) {
           // mounting to a real element
           // check if this is server-rendered content and if we can perform
@@ -725,6 +738,7 @@ export function createPatchFunction (backend) {
           }
           // either not server-rendered, or hydration failed.
           // create an empty node and replace it
+          // 非服务端渲染，把真实dom转成vnode
           oldVnode = emptyNodeAt(oldVnode)
         }
 
@@ -733,6 +747,7 @@ export function createPatchFunction (backend) {
         const parentElm = nodeOps.parentNode(oldElm)
 
         // create new node
+        // createElm 的作用是通过虚拟节点创建真实的 DOM 并插入到它的父节点中
         createElm(
           vnode,
           insertedVnodeQueue,

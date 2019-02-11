@@ -106,12 +106,14 @@ export function _createElement (
     ns = (context.$vnode && context.$vnode.ns) || config.getTagNamespace(tag)
     if (config.isReservedTag(tag)) {
       // platform built-in elements
+      // 平台内建元素
       vnode = new VNode(
         config.parsePlatformTagName(tag), data, children,
         undefined, undefined, context
       )
     } else if (isDef(Ctor = resolveAsset(context.$options, 'components', tag))) {
       // component
+      // 判断发现tag是已注册组件名，则创建组件vnode
       vnode = createComponent(Ctor, data, context, children, tag)
     } else {
       // unknown or unlisted namespaced elements
@@ -124,11 +126,13 @@ export function _createElement (
     }
   } else {
     // direct component options / constructor
+    // else：tag是Component类型
     vnode = createComponent(tag, data, context, children)
   }
   if (Array.isArray(vnode)) {
     return vnode
   } else if (isDef(vnode)) {
+    // 单个vnode
     if (isDef(ns)) applyNS(vnode, ns)
     if (isDef(data)) registerDeepBindings(data)
     return vnode
@@ -138,6 +142,7 @@ export function _createElement (
 }
 
 function applyNS (vnode, ns, force) {
+  // 应用命名空间
   vnode.ns = ns
   if (vnode.tag === 'foreignObject') {
     // use default namespace inside foreignObject

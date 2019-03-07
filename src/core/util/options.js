@@ -420,6 +420,7 @@ export function resolveAsset (
     return
   }
   const assets = options[type]
+  // 解析资源，对不同格式的id（其实是tag）进行兼容
   // check local registration variations first
   if (hasOwn(assets, id)) return assets[id]
   const camelizedId = camelize(id)

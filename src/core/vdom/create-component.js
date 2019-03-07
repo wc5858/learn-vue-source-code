@@ -109,10 +109,13 @@ export function createComponent (
     return
   }
 
+  // baseCtor即Vue的构造函数
+  // src/core/global-api/index.js
   const baseCtor = context.$options._base
 
   // plain options object: turn it into a constructor
   if (isObject(Ctor)) {
+    // src/core/global-api/extend.js
     Ctor = baseCtor.extend(Ctor)
   }
 
@@ -126,6 +129,7 @@ export function createComponent (
   }
 
   // async component
+  // 异步组件，暂略
   let asyncFactory
   if (isUndef(Ctor.cid)) {
     asyncFactory = Ctor
@@ -183,15 +187,18 @@ export function createComponent (
   }
 
   // install component management hooks onto the placeholder node
+  // 初始化组件管理钩子
   installComponentHooks(data)
 
   // return a placeholder vnode
   const name = Ctor.options.name || tag
+  // 组件的 vnode 是没有 children 的
+  // 组件的tag与cid绑定
   const vnode = new VNode(
     `vue-component-${Ctor.cid}${name ? `-${name}` : ''}`,
     data, undefined, undefined, undefined, context,
     { Ctor, propsData, listeners, tag, children },
-    asyncFactory
+    asyncFactory // 这个是undefined
   )
 
   // Weex specific: invoke recycle-list optimized @render function for
@@ -230,6 +237,7 @@ function installComponentHooks (data: VNodeData) {
     const existing = hooks[key]
     const toMerge = componentVNodeHooks[key]
     if (existing !== toMerge && !(existing && existing._merged)) {
+      // 合并或添加钩子到data.hook
       hooks[key] = existing ? mergeHook(toMerge, existing) : toMerge
     }
   }

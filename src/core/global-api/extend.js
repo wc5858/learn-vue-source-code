@@ -10,6 +10,7 @@ export function initExtend (Vue: GlobalAPI) {
    * cid. This enables us to create wrapped "child
    * constructors" for prototypal inheritance and cache them.
    */
+  // 每个实例构造函数（包括Vue）都有一个唯一的cid。 这使我们能够为原型继承创建包装的“子构造函数”并缓存它们。
   Vue.cid = 0
   let cid = 1
 
@@ -21,6 +22,8 @@ export function initExtend (Vue: GlobalAPI) {
     const Super = this
     const SuperId = Super.cid
     const cachedCtors = extendOptions._Ctor || (extendOptions._Ctor = {})
+    // 缓存中已经存在的直接返回
+    // 注意缓存存在传入对象extendOptions中，也就是说对同一传入对象，同一super，只创建一个子构造函数
     if (cachedCtors[SuperId]) {
       return cachedCtors[SuperId]
     }
@@ -30,6 +33,7 @@ export function initExtend (Vue: GlobalAPI) {
       validateComponentName(name)
     }
 
+    // 有点接近寄生组合式继承，不过用_init代替了Super.call
     const Sub = function VueComponent (options) {
       this._init(options)
     }
@@ -45,6 +49,7 @@ export function initExtend (Vue: GlobalAPI) {
     // For props and computed properties, we define the proxy getters on
     // the Vue instances at extension time, on the extended prototype. This
     // avoids Object.defineProperty calls for each instance created.
+    // 对props and computed属性创建代理
     if (Sub.options.props) {
       initProps(Sub)
     }
@@ -63,6 +68,7 @@ export function initExtend (Vue: GlobalAPI) {
       Sub[type] = Super[type]
     })
     // enable recursive self-lookup
+    // 启用递归自查找（作用暂时不明）
     if (name) {
       Sub.options.components[name] = Sub
     }

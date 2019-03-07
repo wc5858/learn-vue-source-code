@@ -716,6 +716,9 @@ Dep.prototype.notify = function notify () {
   }
 };
 
+// the current target watcher being evaluated.
+// this is globally unique because there could be only one
+// watcher being evaluated at any time.
 Dep.target = null;
 var targetStack = [];
 
@@ -1116,6 +1119,11 @@ function dependArray (value) {
 
 /*  */
 
+/**
+ * Option overwriting strategies are functions that handle
+ * how to merge a parent option value and a child option
+ * value into the final value.
+ */
 var strats = config.optionMergeStrategies;
 
 /**
@@ -1511,6 +1519,7 @@ function resolveAsset (
     return
   }
   var assets = options[type];
+  // 解析资源，对不同格式的id（其实是tag）进行兼容
   // check local registration variations first
   if (hasOwn(assets, id)) { return assets[id] }
   var camelizedId = camelize(id);
@@ -2221,6 +2230,21 @@ function checkProp (
 
 /*  */
 
+// The template compiler attempts to minimize the need for normalization by
+// statically analyzing the template at compile time.
+//
+// For plain HTML markup, normalization can be completely skipped because the
+// generated render function is guaranteed to return Array<VNode>. There are
+// two cases where extra normalization is needed:
+
+// 1. When the children contains components - because a functional component
+// may return an Array instead of a single root. In this case, just a simple
+// normalization is needed - if any child is an Array, we flatten the whole
+// thing with Array.prototype.concat. It is guaranteed to be only 1-level deep
+// because functional components already normalize their own children.
+
+// apply把children作为参数传入Array.prototype.concat，从而铺平数组，注意这个技巧
+// 函数式组件返回的是数组，所以需要做这个处理
 function simpleNormalizeChildren (children) {
   for (var i = 0; i < children.length; i++) {
     if (Array.isArray(children[i])) {
@@ -3734,6 +3758,9 @@ function resolveInject (inject, vm) {
 
 /*  */
 
+/**
+ * Runtime helper for rendering v-for lists.
+ */
 function renderList (
   val,
   render
@@ -3765,6 +3792,9 @@ function renderList (
 
 /*  */
 
+/**
+ * Runtime helper for rendering <slot>
+ */
 function renderSlot (
   name,
   fallback,
@@ -3811,6 +3841,9 @@ function renderSlot (
 
 /*  */
 
+/**
+ * Runtime helper for resolving filters
+ */
 function resolveFilter (id) {
   return resolveAsset(this.$options, 'filters', id, true) || identity
 }
@@ -3849,6 +3882,9 @@ function checkKeyCodes (
 
 /*  */
 
+/**
+ * Runtime helper for merging v-bind="object" into a VNode's data.
+ */
 function bindObjectProps (
   data,
   tag,
@@ -4136,10 +4172,13 @@ function mergeProps (to, from) {
 
 // https://github.com/Hanks10100/weex-native-directive/tree/master/component
 
-/*  */
+// listening on native callback
 
 /*  */
 
+/*  */
+
+// inline hooks to be invoked on component VNodes during patch
 var componentVNodeHooks = {
   init: function init (vnode, hydrating) {
     if (
@@ -4217,10 +4256,13 @@ function createComponent (
     return
   }
 
+  // baseCtor即Vue的构造函数
+  // src/core/global-api/index.js
   var baseCtor = context.$options._base;
 
   // plain options object: turn it into a constructor
   if (isObject(Ctor)) {
+    // src/core/global-api/extend.js
     Ctor = baseCtor.extend(Ctor);
   }
 
@@ -4234,6 +4276,7 @@ function createComponent (
   }
 
   // async component
+  // 异步组件，暂略
   var asyncFactory;
   if (isUndef(Ctor.cid)) {
     asyncFactory = Ctor;
@@ -4291,15 +4334,18 @@ function createComponent (
   }
 
   // install component management hooks onto the placeholder node
+  // 初始化组件管理钩子
   installComponentHooks(data);
 
   // return a placeholder vnode
   var name = Ctor.options.name || tag;
+  // 组件的 vnode 是没有 children 的
+  // 组件的tag与cid绑定
   var vnode = new VNode(
     ("vue-component-" + (Ctor.cid) + (name ? ("-" + name) : '')),
     data, undefined, undefined, undefined, context,
     { Ctor: Ctor, propsData: propsData, listeners: listeners, tag: tag, children: children },
-    asyncFactory
+    asyncFactory // 这个是undefined
   );
 
   // Weex specific: invoke recycle-list optimized @render function for
@@ -4334,6 +4380,7 @@ function installComponentHooks (data) {
     var existing = hooks[key];
     var toMerge = componentVNodeHooks[key];
     if (existing !== toMerge && !(existing && existing._merged)) {
+      // 合并或添加钩子到data.hook
       hooks[key] = existing ? mergeHook$1(toMerge, existing) : toMerge;
     }
   }
@@ -4653,6 +4700,7 @@ function initMixin (Vue) {
       // internal component options needs special treatment.
       initInternalComponent(vm, options);
     } else {
+      // .vue文件export default出来的对象也会被合并到options中
       vm.$options = mergeOptions(
         resolveConstructorOptions(vm.constructor),
         options || {},
@@ -4821,6 +4869,7 @@ function initExtend (Vue) {
    * cid. This enables us to create wrapped "child
    * constructors" for prototypal inheritance and cache them.
    */
+  // 每个实例构造函数（包括Vue）都有一个唯一的cid。 这使我们能够为原型继承创建包装的“子构造函数”并缓存它们。
   Vue.cid = 0;
   var cid = 1;
 
@@ -4832,6 +4881,8 @@ function initExtend (Vue) {
     var Super = this;
     var SuperId = Super.cid;
     var cachedCtors = extendOptions._Ctor || (extendOptions._Ctor = {});
+    // 缓存中已经存在的直接返回
+    // 注意缓存存在传入对象extendOptions中，也就是说对同一传入对象，同一super，只创建一个子构造函数
     if (cachedCtors[SuperId]) {
       return cachedCtors[SuperId]
     }
@@ -4841,6 +4892,7 @@ function initExtend (Vue) {
       validateComponentName(name);
     }
 
+    // 有点接近寄生组合式继承，不过用_init代替了Super.call
     var Sub = function VueComponent (options) {
       this._init(options);
     };
@@ -4856,6 +4908,7 @@ function initExtend (Vue) {
     // For props and computed properties, we define the proxy getters on
     // the Vue instances at extension time, on the extended prototype. This
     // avoids Object.defineProperty calls for each instance created.
+    // 对props and computed属性创建代理
     if (Sub.options.props) {
       initProps$1(Sub);
     }
@@ -4874,6 +4927,7 @@ function initExtend (Vue) {
       Sub[type] = Super[type];
     });
     // enable recursive self-lookup
+    // 启用递归自查找（作用暂时不明）
     if (name) {
       Sub.options.components[name] = Sub;
     }
@@ -5116,6 +5170,7 @@ function initGlobalAPI (Vue) {
   initAssetRegisters(Vue);
 }
 
+// 全局静态方法
 initGlobalAPI(Vue);
 
 // Object.defineProperty默认不可枚举、不可写
@@ -5139,6 +5194,8 @@ Vue.version = '2.5.17-beta.0';
 
 /*  */
 
+// these are reserved for web because they are directly compiled away
+// during template compilation
 var isReservedAttr = makeMap('style,class');
 
 // attributes that should be using props for binding
@@ -5335,6 +5392,9 @@ var isTextInputType = makeMap('text,number,password,search,email,tel,url');
 
 /*  */
 
+/**
+ * Query an element selector if it's not an element already.
+ */
 function query (el) {
   if (typeof el === 'string') {
     var selected = document.querySelector(el);
@@ -5353,6 +5413,7 @@ function query (el) {
 
 /*  */
 
+// 对web下的dom操作作了封装
 function createElement$1 (tagName, vnode) {
   var elm = document.createElement(tagName);
   if (tagName !== 'select') {
@@ -7088,6 +7149,10 @@ function genDefaultModel (
 
 /*  */
 
+// normalize v-model event tokens that can only be determined at runtime.
+// it's important to place the event as the first in the array because
+// the whole point is ensuring the v-model callback gets called before
+// user-attached handlers.
 function normalizeEvents (on) {
   /* istanbul ignore if */
   if (isDef(on[RANGE_TOKEN])) {
@@ -7993,6 +8058,8 @@ var platformModules = [
 
 /*  */
 
+// the directive module should be applied last, after all
+// built-in modules have been applied.
 var modules = platformModules.concat(baseModules);
 
 // nodeOps 封装了一系列 DOM 操作的方法，modules 定义了一些模块的钩子函数的实现
@@ -8005,6 +8072,7 @@ var patch = createPatchFunction({ nodeOps: nodeOps, modules: modules });
  * properties to Elements.
  */
 
+/* istanbul ignore if */
 if (isIE9) {
   // http://www.matts411.com/post/internet-explorer-9-oninput/
   document.addEventListener('selectionchange', function () {
@@ -8140,6 +8208,7 @@ function trigger (el, type) {
 
 /*  */
 
+// recursively search for possible transition defined inside the component root
 function locateNode (vnode) {
   return vnode.componentInstance && (!vnode.data || !vnode.data.transition)
     ? locateNode(vnode.componentInstance._vnode)
@@ -8577,6 +8646,7 @@ var platformComponents = {
 
 /*  */
 
+// install platform specific utils
 Vue.config.mustUseProp = mustUseProp;
 Vue.config.isReservedTag = isReservedTag;
 Vue.config.isReservedAttr = isReservedAttr;
@@ -8813,6 +8883,7 @@ var isNonPhrasingTag = makeMap(
  * http://erik.eae.net/simplehtmlparser/simplehtmlparser.js
  */
 
+// Regular Expressions for parsing tags and attributes
 var attribute = /^\s*([^\s"'<>\/=]+)(?:\s*(=)\s*(?:"([^"]*)"+|'([^']*)'+|([^\s"'=<>`]+)))?/;
 // could use https://www.w3.org/TR/1999/REC-xml-names-19990114/#NT-QName
 // but for Vue templates we can enforce a simple charset
@@ -10075,8 +10146,6 @@ function genHandlers (
   return res.slice(0, -1) + '}'
 }
 
-// Generate handler code with binding params on Weex
-/* istanbul ignore next */
 function genHandler (
   name,
   handler
@@ -10622,7 +10691,7 @@ function genProps (props) {
   return res.slice(0, -1)
 }
 
-/* istanbul ignore next */
+// #3895, #4268
 function transformSpecialNewlines (text) {
   return text
     .replace(/\u2028/g, '\\u2028')
@@ -10631,6 +10700,8 @@ function transformSpecialNewlines (text) {
 
 /*  */
 
+// these keywords should not appear inside expressions, but operators like
+// typeof, instanceof and in are allowed
 var prohibitedKeywordRE = new RegExp('\\b' + (
   'do,if,for,let,new,try,var,case,else,with,await,break,catch,class,const,' +
   'super,throw,while,yield,delete,export,import,return,switch,default,' +
@@ -10885,6 +10956,9 @@ function createCompilerCreator (baseCompile) {
 
 /*  */
 
+// `createCompilerCreator` allows creating compilers that use alternative
+// parser/optimizer/codegen, e.g the SSR optimizing compiler.
+// Here we just export a default compiler using the default parts.
 var createCompiler = createCompilerCreator(function baseCompile (
   template,
   options
@@ -10908,6 +10982,7 @@ var compileToFunctions = ref$1.compileToFunctions;
 
 /*  */
 
+// check whether current browser encodes a char inside attribute values
 var div;
 function getShouldDecode (href) {
   div = div || document.createElement('div');
